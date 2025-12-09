@@ -24,7 +24,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let participantsHTML = "<ul class='participants-list'>";
         if (details.participants.length > 0) {
           details.participants.forEach(email => {
-            participantsHTML += `<li>${email}</li>`;
+            participantsHTML += `<li class="participant-item" data-activity="${encodeURIComponent(name)}" data-email="${encodeURIComponent(email)}">
+              <span class="participant-email">${email}</span>
+              <span class="delete-participant" title="Remove participant">&times;</span>
+            </li>`;
           });
         } else {
           participantsHTML += `<li class='no-participants'>No participants yet</li>`;
@@ -98,4 +101,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize app
   fetchActivities();
+  // Event delegation for delete icon
+  activitiesList.addEventListener("click", async (event) => {
+    if (event.target.classList.contains("delete-participant")) {
+      const li = event.target.closest(".participant-item");
+      const activity = li.getAttribute("data-activity");
+      const email = li.getAttribute("data-email");
+      if (!activity || !email) return;
+
+      if (!confirm(`Remove ${decodeURIComponent(email)} from ${decodeURIComponent(activity)}?`)) return;
+
+      try {
+        const response = await fetch(`/activities/${activity}/unregister?email=${email}`, {
+          method: "DELETE",
+        });
+        const result = await response.json();
+        if (response.ok) {
+          li.remove();
+        } else {
+          alert(result.detail || "Failed to remove participant.");
+        }
+      } catch (error) {
+        alert("Error removing participant.");
+      }
+    }
+  });
 });
